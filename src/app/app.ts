@@ -1,12 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeService } from './core/theme.service';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  template: '<router-outlet />',
 })
 export class App {
-  protected readonly title = signal('ng-kanban-manager');
+  // instancia o serviço cedo para aplicar o tema salvo
+  protected readonly theme = inject(ThemeService);
 }
