@@ -1,46 +1,56 @@
 # Kanban Manager
 
-> Angular 22 · NgRx SignalStore · Angular CDK Drag & Drop · Optimistic Updates · Vitest + Testing Library
+Quadro kanban para gerenciar tarefas de uma sprint, feito com Angular 22, signals e Angular CDK Drag & Drop. Funciona 100% no navegador: os dados ficam no `localStorage`.
 
-A Trello-like Kanban board with real-time drag-and-drop, signal-driven state, and rollback on API failure.
+## Funcionalidades
 
-## Features
+- Arrastar e soltar cards entre colunas e reordenar dentro da coluna (CDK); colunas também podem ser reordenadas pelo cabeçalho.
+- Criar, editar e excluir cards (título, descrição, prioridade, responsável, prazo e labels) em modal de detalhe.
+- Criar, renomear, recolorir, definir limite WIP e excluir colunas (exclusão apenas para administradores).
+- Busca por texto e filtros por prioridade, responsável e label.
+- Desfazer (botão, aviso na tela ou `Ctrl+Z`) com histórico das últimas 30 ações.
+- Persistência automática no `localStorage`, com tratamento de dados corrompidos e opção de restaurar o exemplo.
+- Estados de carregamento (skeleton), vazio e erro.
+- Tema claro/escuro (respeita `prefers-color-scheme`) e layout responsivo.
+- Login simulado com guards de rota.
 
-- **NgRx SignalStore** – board state lives in `signalStore()` using `withState`, `withComputed`, and `withMethods`; each piece of state is a fine-grained signal automatically.
-- **CDK Drag & Drop** – columns are `cdkDropList` containers; cards are `cdkDrag` items; `cdkDropListGroup` wires cross-column moves without manual wiring.
-- **Optimistic Updates with Rollback** – `moveCard()` and `addCard()` snapshot the current state, mutate optimistically, make the HTTP call, and restore the snapshot on error — zero flicker on success, transparent rollback on failure.
-- **Angular Control Flow** – all templates use `@for`, `@if`, `@empty` (Angular 17+ built-in control flow, no `*ngFor`/`*ngIf`).
-- **Jest Unit Tests** – `KanbanStore` is tested with injected mocks via `TestBed`; rollback scenario verifies the snapshot restoration.
+## Credenciais de demonstração
 
-## Tech Stack
+A tela de login já vem preenchida e tem botões "Entrar como ...":
 
-| Package | Version |
-|---|---|
-| `@angular/core` | ^22.3.0 |
-| `@angular/cdk` | ^22.3.0 |
-| `@ngrx/signals` | ^22.0.0 |
-| `jest` / `@testing-library/angular` | ^29 / ^17 |
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Administrador | `admin@demo.com` | `demo123` |
+| Membro | `membro@demo.com` | `demo123` |
 
-## Running locally
+## Stack
+
+Angular 22 (standalone, signals, `OnPush`, novo control flow), Angular CDK, Reactive Forms, TypeScript estrito, SCSS, Vitest.
+
+## Como rodar
 
 ```bash
-npm install
-ng serve
-
-# Tests
+npm install --legacy-peer-deps   # (ou apenas npm install)
+npm start                        # http://localhost:4200
+npm run build
 npm test
 ```
 
-## Architecture
+## Decisões de arquitetura
 
 ```
 src/app/
-├── store/
-│   └── kanban.store.ts   # NgRx SignalStore — state, computed, methods
-└── board/
-    ├── board.component.ts     # CdkDropListGroup + orchestration
-    ├── column.component.ts    # CdkDropList per column
-    ├── card.component.ts      # CdkDrag per card
-    ├── board.service.ts       # HTTP calls (move, add, delete)
-    └── kanban.store.spec.ts   # Vitest unit tests
+├── core/
+│   ├── board.store.ts   # estado do board (signals), undo, filtros e persistência
+│   ├── auth.service.ts  # login simulado + contas demo
+│   ├── auth.guard.ts    # authGuard / guestGuard
+│   ├── theme.service.ts # tema claro/escuro
+│   ├── models.ts, seed.ts
+├── login/               # tela de login (lazy)
+└── board/               # board-page, column, card, card-dialog (lazy)
 ```
+
+- **Store com signals, sem biblioteca extra:** `BoardStore` expõe `columns` e `filters` como signals e derivações com `computed` (`visibleColumns`, `canUndo`...). Toda mutação passa por `commit()`, que guarda um snapshot imutável para o undo e dispara o `effect` que persiste no `localStorage`.
+- **Movimentação independente de filtros:** o card é movido "antes do card X" (ou ao final), então o drag-and-drop continua correto mesmo com filtros ativos.
+- **Rotas lazy** e componentes `OnPush` com `input()`/`output()`.
+- **Dados simulados:** sem backend; trocar o `BoardStore` por chamadas HTTP é a evolução natural.
